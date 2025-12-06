@@ -2,6 +2,7 @@ use std::{cmp::Ordering, ops::Range};
 
 use aoc_runner_derive::aoc;
 
+#[derive(Debug,Clone)]
 struct Map(Vec<(Range<isize>, isize)>);
 impl Map {
     fn new(input: &str) -> Map {
@@ -33,60 +34,74 @@ impl Map {
     }
 
     fn chain(&mut self, next: Map) {
-        for (mut range_to_chain, mut offset)in next.0 {
+        for (mut range_to_chain, offset)in next.0 {
             eprintln!("chaining ({range_to_chain:?}, {offset}) into {:?}", self.0);
-            let mut idx = self.0.partition_point(|(range, _)| {
-                range.end < range_to_chain.start
-            });
+            let mut idx = self.0.binary_search_by(|(range, _)| {
+                match range_to_chain.start.cmp(&range.end) {
+                    Ordering::Equal | Ordering::Greater => Ordering::Greater,
+                    Ordering::Less => match range_to_chain.end.cmp(&range.start) {
+                        Ordering::Greater => Ordering::Equal,
+                        Ordering::Less | Ordering::Equal => Ordering::Less,
+                    }
+                }
+            }).unwrap_or_else(|idx| idx);
+            
+            //let (existing_range, existing_offset) = self.0[idx].clone();
+            //if existing_range.start > range_to_chain.end {
+            //    self.0.insert(idx, (range_to_chain, offset));
+            //    return;
+            //}
             let start_idx = idx;
+            dbg!(idx);
             let mut entries_to_replace = Vec::new();
             while !range_to_chain.is_empty() && idx < self.0.len() {
+                dbg!(idx);
                 let (existing_range, existing_offset) = self.0[idx].clone();
                 match (existing_range.start.cmp(&range_to_chain.start), existing_range.end.cmp(&range_to_chain.end)) {
                     (Ordering::Equal, Ordering::Equal) => {
                         entries_to_replace.push((existing_range, offset));
-                        range_to_chain.end = range_to_chain.start;  // empty range to signal we're done.
+                        range_to_chain.end = range_to_chain.start;  // empty range to signal we're done
                     },
                     (Ordering::Equal, Ordering::Greater) => {
-                        entries_to_replace.push((range_to_chain.clone(), existing_offset+offset));
+                        entries_to_replace.push((range_to_chain.clone(), offset-existing_offset));
                         entries_to_replace.push((range_to_chain.end..existing_range.end, existing_offset));
                         range_to_chain.end = range_to_chain.start; // empty range to signal we're done
                     },
                     (Ordering::Equal, Ordering::Less) => {
-                        entries_to_replace.push((existing_range.clone(), existing_offset+offset));
+                        entries_to_replace.push((existing_range.clone(), offset-existing_offset));
                         range_to_chain.start = existing_range.end;
                     },
                     (Ordering::Greater, Ordering::Equal) => {
                         entries_to_replace.push((range_to_chain.start..existing_range.start, offset));
-                        entries_to_replace.push((existing_range, existing_offset+offset));
+                        entries_to_replace.push((existing_range, offset-existing_offset));
                         range_to_chain.end = range_to_chain.start;  // empty range to signal we're done
                     },
                     (Ordering::Greater, Ordering::Greater) => {
                         entries_to_replace.push((range_to_chain.start..existing_range.start, offset));
-                        entries_to_replace.push((existing_range.start..range_to_chain.end, existing_offset+offset));
+                        entries_to_replace.push((existing_range.start..range_to_chain.end, offset-existing_offset));
                         entries_to_replace.push((range_to_chain.end..existing_range.end, existing_offset));
                         range_to_chain.end = range_to_chain.start;  // empty range to signal we're done
                     },
                     (Ordering::Greater, Ordering::Less) => {
                         entries_to_replace.push((range_to_chain.start..existing_range.start, offset));
-                        entries_to_replace.push((existing_range.start..existing_range.end, existing_offset+offset));
+                        entries_to_replace.push((existing_range.start..existing_range.end, offset-existing_offset));
                         range_to_chain.start = existing_range.end;
                     }
                     (Ordering::Less, Ordering::Equal) => {
                         entries_to_replace.push((existing_range.start..range_to_chain.start, existing_offset));
-                        entries_to_replace.push((range_to_chain.clone(), existing_offset+offset));
+                        entries_to_replace.push((range_to_chain.clone(), offset-existing_offset));
                         range_to_chain.end = range_to_chain.start;  // empty range to signal we're done
 
                     },
                     (Ordering::Less, Ordering::Greater) => {
                         entries_to_replace.push((existing_range.start..range_to_chain.start, existing_offset));
-                        entries_to_replace.push((range_to_chain.start..range_to_chain.end, existing_offset+offset));
+                        entries_to_replace.push((range_to_chain.start..range_to_chain.end, offset-existing_offset));
                         entries_to_replace.push((range_to_chain.end..existing_range.end, existing_offset));
                         range_to_chain.end = range_to_chain.start;  // empty range to signal we're done
                     },
                     (Ordering::Less, Ordering::Less) => {
                         entries_to_replace.push((existing_range.start..range_to_chain.start, existing_offset));
-                        entries_to_replace.push((range_to_chain.start..existing_range.end, existing_offset+offset));
+                        entries_to_replace.push((range_to_chain.start..existing_range.end, offset-existing_offset));
                         range_to_chain.start = existing_range.end;
                     }
                 }
@@ -166,4 +181,26 @@ fn part2(input: &str) -> isize {
         }
         id
     }).min().unwrap()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use proptest::proptest;
+
+    proptest! {
+        #[test]
+        fn my_test(a in 0..100isize, b in 0..100isize, c in 0..100isize, d in 0..100isize, e in 0..100isize) {
+            let map_a = Map(vec![(a..a+b, a+b)]);
+            let map_b = Map(vec![(c..c+d, c+d)]);
+
+            let mut chained_map = map_a.clone();
+            chained_map.chain(map_b.clone());
+
+            dbg!(&map_a);
+            dbg!(&map_b);
+
+            assert_eq!(map_b.translate(map_a.translate(d)), chained_map.translate(d));
+        }
+    }
 }
