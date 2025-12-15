@@ -24,19 +24,31 @@ fn winning_range(time: usize, distance: usize) -> (usize, usize) {
 #[aoc(day6, part1)]
 fn part1(input: &str) -> usize {
     let (time, distance) = input.split_once("\n").unwrap();
-    time.split_whitespace().zip(distance.split_whitespace()).skip(1).map(|(time, distance)| {
-        let time: usize = time.parse().unwrap();
-        let distance: usize = distance.parse().unwrap();
-        let (min, max) = winning_range(time, distance);
-        max - min + 1
-    }).product()
+    time.split_whitespace()
+        .zip(distance.split_whitespace())
+        .skip(1)
+        .map(|(time, distance)| {
+            let time: usize = time.parse().unwrap();
+            let distance: usize = distance.parse().unwrap();
+            let (min, max) = winning_range(time, distance);
+            max - min + 1
+        })
+        .product()
 }
 
 #[aoc(day6, part2)]
 fn part2(input: &str) -> usize {
     let (time, distance) = input.split_once("\n").unwrap();
-    let time = time.as_bytes().iter().filter(|b| b.is_ascii_digit()).fold(0usize, |accum, b| accum * 10 + (b - b'0') as usize);
-    let distance = distance.as_bytes().iter().filter(|b| b.is_ascii_digit()).fold(0usize, |accum, b| accum * 10 + (b - b'0') as usize);
+    let time = time
+        .as_bytes()
+        .iter()
+        .filter(|b| b.is_ascii_digit())
+        .fold(0usize, |accum, b| accum * 10 + (b - b'0') as usize);
+    let distance = distance
+        .as_bytes()
+        .iter()
+        .filter(|b| b.is_ascii_digit())
+        .fold(0usize, |accum, b| accum * 10 + (b - b'0') as usize);
     let (min, max) = winning_range(time, distance);
 
     max - min + 1
