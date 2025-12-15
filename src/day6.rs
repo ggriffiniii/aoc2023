@@ -1,8 +1,5 @@
 use aoc_runner_derive::aoc;
 
-const EXAMPLE: &str = r#"Time:      7  15   30
-Distance:  9  40  200"#;
-
 // For a race of time, determine the min and max speeds that will reach at least
 // distance.
 fn winning_range(time: usize, distance: usize) -> (usize, usize) {
@@ -37,7 +34,6 @@ fn part1(input: &str) -> usize {
 
 #[aoc(day6, part2)]
 fn part2(input: &str) -> usize {
-    //let input = EXAMPLE;
     let (time, distance) = input.split_once("\n").unwrap();
     let time = time.as_bytes().iter().filter(|b| b.is_ascii_digit()).fold(0usize, |accum, b| accum * 10 + (b - b'0') as usize);
     let distance = distance.as_bytes().iter().filter(|b| b.is_ascii_digit()).fold(0usize, |accum, b| accum * 10 + (b - b'0') as usize);
