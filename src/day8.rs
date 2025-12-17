@@ -2,17 +2,6 @@ use std::collections::HashMap;
 
 use aoc_runner_derive::aoc;
 
-const EXAMPLE: &str = r#"LR
-
-11A = (11B, XXX)
-11B = (XXX, 11Z)
-11Z = (11B, XXX)
-22A = (22B, XXX)
-22B = (22C, 22C)
-22C = (22Z, 22Z)
-22Z = (22B, 22B)
-XXX = (XXX, XXX)"#;
-
 #[aoc(day8, part1)]
 fn part1(input: &str) -> usize {
     let (directions, tree_nodes) = input.split_once("\n\n").unwrap();
@@ -63,7 +52,6 @@ fn lcm(a: usize, b: usize) -> usize {
 
 #[aoc(day8, part2)]
 fn part2(input: &str) -> usize {
-    //let input = EXAMPLE;
     // The input data ensures that a path from a starting node to an ending node
     // takes X steps, and then X more steps always gets you back to the ending
     // node again. The input data is very specialized to allow for computing the
